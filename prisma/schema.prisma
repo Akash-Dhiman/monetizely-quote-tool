@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FeatureAvailability {
+  INCLUDED
+  ADDON
+  NOT_AVAILABLE
+}
+
+enum PricingModel {
+  FIXED_MONTHLY
+  PER_SEAT
+  PERCENT_OF_PRODUCT
+}
+
+enum TermLength {
+  MONTHLY
+  ANNUAL
+  TWO_YEAR
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+
+  tiers       Tier[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tier {
+  id          String   @id @default(cuid())
+
+  name        String
+
+  basePrice   Decimal
+
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+
+  features    TierFeature[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Feature {
+  id          String   @id @default(cuid())
+
+  name        String
+
+  tiers       TierFeature[]
+
+  createdAt   DateTime @default(now())
+}
+
+model TierFeature {
+  id            String @id @default(cuid())
+
+  tierId        String
+  featureId     String
+
+  tier          Tier    @relation(fields: [tierId], references: [id])
+  feature       Feature @relation(fields: [featureId], references: [id])
+
+  availability  FeatureAvailability
+
+  pricingModel  PricingModel?
+
+  priceValue    Decimal?
+}
+
+model Quote {
+  id             String @id @default(cuid())
+
+  customerName   String
+  quoteName      String
+
+  termLength     TermLength
+
+  seats          Int
+
+  discountPct    Decimal?
+
+  totalAmount    Decimal
+
+  productId      String
+  tierId         String
+
+  shareToken     String @unique
+
+  createdAt      DateTime @default(now())
+
+  items          QuoteItem[]
+}
+
+model QuoteItem {
+  id            String @id @default(cuid())
+
+  quoteId       String
+
+  quote         Quote @relation(fields: [quoteId], references: [id])
+
+  label         String
+
+  description   String
+
+  amount        Decimal
+}
